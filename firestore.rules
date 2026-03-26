@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: posts
+    // Document ID: auto-generated
+    // Fields:
+    //   - title: string (required, < 100 chars)
+    //   - content: string (required, < 5000 chars)
+    //   - mediaUrl: string (optional, < 1000000 chars for base64)
+    //   - mediaType: string (required, 'image', 'video', 'none')
+    //   - authorId: string (required, immutable)
+    //   - createdAt: timestamp (required, immutable)
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == "alleriaonise@gmail.com" && request.auth.token.email_verified == true;
+    }
+
+    function isValidPost(data) {
+      return data.keys().hasAll(['title', 'content', 'mediaType', 'authorId', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.content is string && data.content.size() <= 5000 &&
+             data.mediaType in ['image', 'video', 'none'] &&
+             (!('mediaUrl' in data) || (data.mediaUrl is string && data.mediaUrl.size() < 1000000)) &&
+             data.authorId == request.auth.uid &&
+             data.createdAt is timestamp;
+    }
+
+    match /posts/{postId} {
+      allow read: if true; // Public blog
+      allow create: if isAdmin() && isValidPost(request.resource.data);
+      allow update: if isAdmin() && isValidPost(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+  }
+}

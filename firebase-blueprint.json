@@ -1,0 +1,24 @@
+{
+  "entities": {
+    "Post": {
+      "title": "Post",
+      "description": "A homeschooling update containing text, photo, or video.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the update" },
+        "content": { "type": "string", "description": "Text content" },
+        "mediaUrl": { "type": "string", "description": "Base64 image or Video URL" },
+        "mediaType": { "type": "string", "enum": ["image", "video", "none"] },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "mediaType", "authorId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Homeschooling journey updates"
+    }
+  }
+}
